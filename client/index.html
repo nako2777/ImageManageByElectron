@@ -1,27 +1,46 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Hello World!</title>
     <script src="public/vue.js"></script>
-</head>
-<body id="app">
-    <h1>Hello World!</h1>
-    <p>
-        We are using Node.js <span id="node-version"></span>,
-        Chromium <span id="chrome-version"></span>,
-        and Electron <span id="electron-version"></span>.
-    </p>
-    {{message}}
-</body>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body id="app">
+    <div class="flex">
+      <input type="file" id="photoFile" />
+      <button @click="submitPhoto">submit</button>
+    </div>
 
-<script>
+    {{ message }}
+  </body>
+
+  <script>
     const { createApp } = Vue
-    
+    const port = 3002
     createApp({
       data() {
         return {
           message: 'Hello Vue!'
+        }
+      },
+      methods: {
+        submitPhoto() {
+          const file = document.querySelector('#photoFile')
+          const formData = new FormData()
+          formData.append('photo', file.files[0])
+          fetch(`http://127.0.0.1:${port}/upload`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+            .then(res => {
+              console.log('before:', res)
+              res.json()
+            })
+            .then(data => console.log(data))
         }
       }
     }).mount('#app')
