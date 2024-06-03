@@ -8,11 +8,10 @@
   </head>
   <body id="app">
     <div class="flex">
-      <input type="file" id="photoFile" />
+      <input type="file" id="photoFile" multiple accept="image/*" />
       <button @click="submitPhoto">submit</button>
     </div>
 
-    
     {{ message }}
   </body>
 
@@ -29,20 +28,30 @@
         submitPhoto() {
           const file = document.querySelector('#photoFile')
           const formData = new FormData()
-          formData.append('photo', file.files[0])
+          Array.from(file.files).forEach(e =>
+            formData.append('photos', e, 'test')
+          )
           fetch(`http://127.0.0.1:${port}/upload`, {
             method: 'POST',
-            body: formData,
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+            body: formData
           })
             .then(res => {
               console.log('before:', res)
               res.json()
             })
             .then(data => console.log(data))
+        },
+        getDirStructure(dirName) {
+          fetch(`http://127.0.0.1:${port}/getDirStructure?dirName=${dirName}`, {
+            method: 'GET'
+          }).then(res => {
+            console.log(res)
+            res.json()
+          })
         }
+      },
+      mounted() {
+        this.getDirStructure('');
       }
     }).mount('#app')
   </script>
