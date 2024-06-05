@@ -3,56 +3,176 @@
   <head>
     <meta charset="UTF-8" />
     <title>Hello World!</title>
-    <script src="public/vue.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons|Material+Icons+Outlined|Material+Icons+Round|Material+Icons+Sharp"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/quasar@2.16.4/dist/quasar.prod.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="public/index.css" />
   </head>
-  <body id="app">
-    <div class="flex">
+  <body class="q-pa-xl" id="app">
+    <div>
       <input type="file" id="photoFile" multiple accept="image/*" />
       <button @click="submitPhoto">submit</button>
     </div>
+    <div class="q-pa-md" style="height: 200px">
+      <!-- {{renderList}} -->
+      <q-list separator dense>
+        <q-item
+          v-if="pathList.length>0"
+          class="sectionHover"
+          @click="returnLastFolder"
+          clickable
+        >
+          <q-item-section avatar
+            ><q-icon name="folder"></q-icon
+          ></q-item-section>
+          <q-item-section>..</q-item-section>
+        </q-item>
+        <q-item
+          @click="processItemClick(item)"
+          class="sectionHover"
+          clickable
+          v-ripple
+          v-for="(item,index) in renderList"
+          :key="index"
+        >
+          <q-item-section avatar
+            ><q-icon :name="item.icon"></q-icon
+          ></q-item-section>
+          <q-item-section>{{ item.name }}</q-item-section>
+        </q-item>
+      </q-list>
+    </div>
 
-    {{ message }}
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"
+      integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@2.16.4/dist/quasar.umd.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@2.16.4/dist/icon-set/svg-material-icons.umd.prod.js"></script>
   </body>
 
   <script>
     const { createApp } = Vue
     const port = 3002
-    createApp({
+    const app = createApp({
       data() {
         return {
-          message: 'Hello Vue!'
+          dirList: [],
+          fileList: [],
+          renderList: [],
+          pathList: []
         }
       },
       methods: {
-        submitPhoto() {
-          const file = document.querySelector('#photoFile')
+        submitPhoto(e, file) {
+          console.log(file)
+          if (file == undefined) {
+            file = document.querySelector('#photoFile').files
+          }
           const formData = new FormData()
-          Array.from(file.files).forEach(e =>
-            formData.append('photos', e, 'test')
+          const pathList = this.pathList
+          Array.from(file).forEach(e => formData.append('photos', e, e.name))
+          fetch(
+            `http://127.0.0.1:${port}/upload?pathList=${JSON.stringify(
+              pathList
+            )}`,
+            {
+              method: 'POST',
+              body: formData
+            }
           )
-          fetch(`http://127.0.0.1:${port}/upload`, {
-            method: 'POST',
-            body: formData
-          })
             .then(res => {
-              console.log('before:', res)
               res.json()
             })
-            .then(data => console.log(data))
+            .then(data => this.getDirStructure())
         },
-        getDirStructure(dirName) {
-          fetch(`http://127.0.0.1:${port}/getDirStructure?dirName=${dirName}`, {
-            method: 'GET'
-          }).then(res => {
-            console.log(res)
-            res.json()
+        getDirStructure() {
+          const pathList = JSON.stringify(this.pathList)
+          fetch(
+            `http://127.0.0.1:${port}/getDirStructure?pathList=${pathList}`,
+            {
+              method: 'GET'
+            }
+          )
+            .then(res => {
+              return res.json()
+            })
+            .then(data => this.processFileAndDirData(data))
+        },
+        processFileAndDirData(datas) {
+          this.dirList = []
+          this.fileList = []
+          datas.forEach(data => {
+            if (data.isDir) {
+              this.dirList.push(data)
+            } else {
+              this.fileList.push(data)
+            }
+          })
+          this.setRenderList()
+        },
+        returnLastFolder() {
+          this.pathList.pop()
+          this.getDirStructure()
+        },
+        setRenderList() {
+          this.renderList = []
+          this.renderList = [...this.dirList, ...this.fileList]
+        },
+        downloadByName(name) {
+          const pathList = this.pathList
+          fetch(
+            `http://127.0.0.1:${port}/downloadFile?name=${name}&pathList=${JSON.stringify(
+              pathList
+            )}`,
+            {
+              method: 'GET'
+            }
+          )
+            .then(res => {
+              console.log(res)
+              return res.blob()
+            })
+            .then(blob => {
+              saveAs(blob, name)
+            })
+        },
+        processItemClick(item) {
+          if (item.isDir) {
+            this.pathList.push(item.name)
+            this.getDirStructure()
+          } else {
+            this.downloadByName(item.name)
+          }
+        },
+        dragAndDropEventInit() {
+          window.addEventListener('drop', e => {
+            event.preventDefault()
+            this.submitPhoto(event, e.dataTransfer.files)
+          })
+          window.addEventListener('dragover', event => {
+            event.preventDefault()
+            console.log('dragovering')
           })
         }
       },
       mounted() {
-        this.getDirStructure('');
+        Quasar.useQuasar().dark.set(true)
+        this.dragAndDropEventInit()
+        this.getDirStructure()
       }
-    }).mount('#app')
+    })
+    app.use(Quasar)
+    app.mount('#app')
   </script>
 </html>
