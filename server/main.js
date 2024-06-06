@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const app = express();
 const cors = require("cors");
+// const { pathList } = require("../client/main");
 
 const port = 3002;
 
@@ -35,6 +36,31 @@ app.get("/downloadFile", (req, res) => {
     res
   );
 });
+
+app.get("/deleteFile", (req, res) => {
+  const result = deleteFile(
+    JSON.parse(req.query.files),
+    JSON.parse(req.query.pathList),
+    res
+  );
+})
+
+
+
+
+const deleteFile = (files,pathList,res)=> {
+   const filePath = path.join(__dirname,"uploads",pathList.join("/"));
+   files.forEach(file => {
+      const deleteFilePath = path.join(filePath,file.name)
+      fs.unlink(deleteFilePath,(err)=>{
+        if(err){
+          console.log('deleting ERROR:',err);
+        }else{
+          res.status(200).end('delete success')
+        }
+      })
+   })
+}
 
 const downloadFile = (name, pathList, res) => {
   const filePath = path.join(__dirname, "uploads", pathList.join("/"), name);

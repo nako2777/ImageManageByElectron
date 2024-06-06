@@ -16,9 +16,21 @@
     <link rel="stylesheet" href="public/index.css" />
   </head>
   <body class="q-pa-xl" id="app">
-    <div>
-      <input type="file" id="photoFile" multiple accept="image/*" />
-      <button @click="submitPhoto">submit</button>
+    <div class="row">
+      <input
+        class="col-2"
+        type="file"
+        id="photoFile"
+        multiple
+        accept="image/*"
+      />
+      <button class="col-2" @click="submitPhoto">submit</button>
+      <q-space></q-space>
+      <q-input class="col-5" dense style="height: 27px" v-model="fileKeys">
+        <template v-slot:append>
+          <q-btn round icon="search" @click="searchFile"> </q-btn>
+        </template>
+      </q-input>
     </div>
     <div class="q-pa-md" style="height: 200px">
       <!-- {{renderList}} -->
@@ -36,6 +48,7 @@
         </q-item>
         <q-item
           @click="processItemClick(item)"
+          @contextmenu="handleContextMenu(item)"
           class="sectionHover"
           clickable
           v-ripple
@@ -70,7 +83,8 @@
           dirList: [],
           fileList: [],
           renderList: [],
-          pathList: []
+          pathList: [],
+          fileKeys:'',
         }
       },
       methods: {
@@ -164,11 +178,35 @@
             event.preventDefault()
             console.log('dragovering')
           })
+        },
+        handleContextMenu(item) {
+          const files = []
+          files.push(item)
+          window.fileProcessAPI.selectedFiles(
+            JSON.stringify(this.pathList),
+            JSON.stringify(files)
+          )
+        },
+        initIpcListener() {
+          window.fileProcessAPI.onReloadDir(() => {
+            console.log('reloading')
+            this.getDirStructure()
+          })
+        },
+        searchFile() {
+          fetch(`http:127.0.0.1:${port}/searchFile?keys=${this.fileKeys}`)
+          .then(res =>{
+            console.log(res)
+            res.json()
+          }).then(data =>{
+            console.log(data)
+          })
         }
       },
       mounted() {
         Quasar.useQuasar().dark.set(true)
         this.dragAndDropEventInit()
+        this.initIpcListener()
         this.getDirStructure()
       }
     })
