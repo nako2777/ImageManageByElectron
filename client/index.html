@@ -84,7 +84,7 @@
           fileList: [],
           renderList: [],
           pathList: [],
-          fileKeys:'',
+          fileKeys: ''
         }
       },
       methods: {
@@ -194,13 +194,16 @@
           })
         },
         searchFile() {
-          fetch(`http:127.0.0.1:${port}/searchFile?keys=${this.fileKeys}`)
-          .then(res =>{
-            console.log(res)
-            res.json()
-          }).then(data =>{
-            console.log(data)
-          })
+          fetch(
+            `http:127.0.0.1:${port}/searchFile?fileKeys=${this.fileKeys}&pathList=${JSON.stringify(this.pathList)}`
+          )
+            .then(res => {
+              console.log(res)
+              res.json()
+            })
+            .then(data => {
+              console.log(data)
+            })
         }
       },
       mounted() {

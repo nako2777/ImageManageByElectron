@@ -45,8 +45,24 @@ app.get("/deleteFile", (req, res) => {
   );
 })
 
+app.get("/searchFile", (req, res) => {
+  console.log(req.query)
+  const result = searchFile(req.query.fileKeys, JSON.parse(req.query.pathList))
+})
 
+const searchFile = (fileKeys,pathList,results = []) =>{
+  const searchPath = path.join(__dirname,"uploads",pathList.join("/"));
+  const files = fs.readdirSync(searchPath);
+  files.forEach(file => {
+    const stat = fs.statSync(path.join(searchPath,file));
+    if(stat.isDirectory()){
+      searchFile(fileKeys,pathList.push(file),results)
+    }else{
+      console.log(file)
+    }
 
+  })
+}
 
 const deleteFile = (files,pathList,res)=> {
    const filePath = path.join(__dirname,"uploads",pathList.join("/"));
