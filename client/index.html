@@ -95,7 +95,7 @@
           }
           const formData = new FormData()
           const pathList = this.pathList
-          Array.from(file).forEach(e => formData.append('photos', e, e.name))
+          Array.from(file).forEach(e => formData.append('photos', e, encodeURIComponent(e.name)))
           fetch(
             `http://127.0.0.1:${port}/upload?pathList=${JSON.stringify(
               pathList
@@ -198,11 +198,11 @@
             `http:127.0.0.1:${port}/searchFile?fileKeys=${this.fileKeys}&pathList=${JSON.stringify(this.pathList)}`
           )
             .then(res => {
-              console.log(res)
-              res.json()
+              return res.json()
             })
             .then(data => {
-              console.log(data)
+              data.forEach(file =>{
+              })
             })
         }
       },

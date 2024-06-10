@@ -4,9 +4,13 @@ const path = require("path");
 const fs = require("fs");
 const app = express();
 const cors = require("cors");
-// const { pathList } = require("../client/main");
+// const got = require("got");
+const envConfig = require("./public/config")
 
-const port = 3002;
+const port = envConfig.port;
+const apiKey = envConfig.apiKey;
+const apiSecret = envConfig.apiSecret; 
+
 
 const stroage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -46,9 +50,9 @@ app.get("/deleteFile", (req, res) => {
 })
 
 app.get("/searchFile", (req, res) => {
-  console.log(req.query)
   const result = searchFile(req.query.fileKeys, JSON.parse(req.query.pathList))
-})
+  res.end(JSON.stringify(result));
+})  
 
 const searchFile = (fileKeys,pathList,results = []) =>{
   const searchPath = path.join(__dirname,"uploads",pathList.join("/"));
@@ -56,12 +60,13 @@ const searchFile = (fileKeys,pathList,results = []) =>{
   files.forEach(file => {
     const stat = fs.statSync(path.join(searchPath,file));
     if(stat.isDirectory()){
-      searchFile(fileKeys,pathList.push(file),results)
+      pathList.push(file);
+      searchFile(fileKeys,pathList,results)
     }else{
-      console.log(file)
+      results.push(file)
     }
-
   })
+  return results;
 }
 
 const deleteFile = (files,pathList,res)=> {
