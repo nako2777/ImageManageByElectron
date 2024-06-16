@@ -9,8 +9,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.7.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "form-data": "^4.0.0",
     "got": "^14.4.1",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.2"

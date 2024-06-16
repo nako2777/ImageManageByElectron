@@ -5,7 +5,9 @@ const fs = require("fs");
 const app = express();
 const cors = require("cors");
 // const got = require("got");
+const axios = require("axios")
 const envConfig = require("./public/config")
+const FormData = require("form-data")
 
 const port = envConfig.port;
 const apiKey = envConfig.apiKey;
@@ -24,6 +26,9 @@ const upload = multer({ storage: stroage });
 app.use(cors());
 
 app.post("/upload", upload.array("photos"), (req, res) => {
+  req.files.forEach(file => {
+    getPicInfo(file)
+  })
   res.status(200);
   res.end("Upload");
 });
@@ -53,6 +58,24 @@ app.get("/searchFile", (req, res) => {
   const result = searchFile(req.query.fileKeys, JSON.parse(req.query.pathList))
   res.end(JSON.stringify(result));
 })  
+
+
+
+
+const getPicInfo = (file) => {
+  const formData = new FormData()
+  formData.append("image",fs.createReadStream(file.path))
+  axios.post("https://api.imagga.com/v2/uploads",{
+    body:formData,
+    username:apiKey,
+    password:apiSecret
+  }).then(res =>{
+    // console.log(typeof res)
+    fs.writeFile("example.txt",res,err=>{
+      console.log(err)
+    })
+  })
+}
 
 const searchFile = (fileKeys,pathList,results = []) =>{
   const searchPath = path.join(__dirname,"uploads",pathList.join("/"));
